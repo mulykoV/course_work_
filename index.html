@@ -1,110 +1,115 @@
 <!DOCTYPE html>
 <html lang="uk">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>HippoWeather - Головна</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
     <nav class="home-nav">
-        <a href="index.html" class="nav-link">Home</a>
-        <a href="forecast.html" class="nav-link">Forecast</a>
-        <span class="nav-link">Ст.3</span>
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="forecast.html" class="nav-link">Forecast</a>
+      <span class="nav-link">Ст.3</span>
     </nav>
 
     <div class="home-container">
-        
+      <div class="banner-wrapper">
+        <img src="banner.png" alt="Hippo Zeus" class="banner-img" />
+      </div>
 
-        <div class="banner-wrapper">
-            <img src="banner.png" alt="Hippo Zeus" class="banner-img">
+      <div class="controls-area">
+        <div class="dropdown-wrapper">
+          <div class="input-box dropdown-btn" id="oblastBtn">
+            <span id="btnText">Оберіть місто з переліку</span>
+            <span>&#9660;</span>
+          </div>
+
+          <div class="dropdown-menu" id="dropdownMenu">
+            <div class="col-regions" id="regionsList"></div>
+            <div class="col-cities" id="citiesList">
+              <div style="text-align: center; margin-top: 20px; color: #777">
+                Оберіть область зліва
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="controls-area">
-            
-            <div class="dropdown-wrapper">
-                <div class="input-box dropdown-btn" id="oblastBtn">
-                    <span id="btnText">Оберіть місто з переліку</span>
-                    <span>&#9660;</span>
-                </div>
-
-                <div class="dropdown-menu" id="dropdownMenu">
-                    <div class="col-regions" id="regionsList"></div>
-                    <div class="col-cities" id="citiesList">
-                        <div style="text-align: center; margin-top: 20px; color: #777;">Оберіть область зліва</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="input-box search-wrapper">
-                <input type="text" class="search-field" id="searchInput" placeholder="Пошук (напр. Ки...)">
-                <span class="search-icon">&#128269;</span>
-            </div>
-
+        <div class="input-box search-wrapper">
+          <input
+            type="text"
+            class="search-field"
+            id="searchInput"
+            placeholder="Пошук (напр. Ки...)"
+          />
+          <span class="search-icon">&#128269;</span>
         </div>
-
+      </div>
     </div>
 
     <a href="#" class="footer">
-        <span class="globe-icon">&#127757;</span>
-        Цікаві факти про те як погода впливає на бегемотів
+      <span class="globe-icon">&#127757;</span>
+      Цікаві факти про те як погода впливає на бегемотів
     </a>
 
     <script>
-        const database = {
-            "Київська": ["Київ", "Біла Церква", "Бориспіль", "Бровари", "Ірпінь"],
-            "Львівська": ["Львів", "Дрогобич", "Стрий", "Трускавець"],
-            "Одеська": ["Одеса", "Чорноморськ", "Ізмаїл"],
-            "Дніпропетровська": ["Дніпро", "Кривий Ріг", "Кам'янське"],
-            "Харківська": ["Харків", "Лозова", "Ізюм"]
+      const database = {
+        Київська: ["Київ", "Біла Церква", "Бориспіль", "Бровари", "Ірпінь"],
+        Львівська: ["Львів", "Дрогобич", "Стрий", "Трускавець"],
+        Одеська: ["Одеса", "Чорноморськ", "Ізмаїл"],
+        Дніпропетровська: ["Дніпро", "Кривий Ріг", "Кам'янське"],
+        Харківська: ["Харків", "Лозова", "Ізюм"],
+      };
+
+      const btn = document.getElementById("oblastBtn");
+      const menu = document.getElementById("dropdownMenu");
+      const rList = document.getElementById("regionsList");
+      const cList = document.getElementById("citiesList");
+      const btnText = document.getElementById("btnText");
+
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        menu.style.display = menu.style.display === "flex" ? "none" : "flex";
+      });
+
+      for (let reg in database) {
+        let item = document.createElement("div");
+        item.className = "menu-item";
+        item.textContent = reg;
+        item.onclick = (e) => {
+          e.stopPropagation();
+          Array.from(rList.children).forEach((c) =>
+            c.classList.remove("active")
+          );
+          item.classList.add("active");
+          btnText.textContent = reg;
+          showCities(reg);
         };
+        rList.appendChild(item);
+      }
 
-        const btn = document.getElementById('oblastBtn');
-        const menu = document.getElementById('dropdownMenu');
-        const rList = document.getElementById('regionsList');
-        const cList = document.getElementById('citiesList');
-        const btnText = document.getElementById('btnText');
-
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex';
+      function showCities(reg) {
+        cList.innerHTML = "";
+        database[reg].forEach((city) => {
+          let item = document.createElement("div");
+          item.className = "menu-item";
+          item.textContent = city;
+          item.onclick = () => {
+            window.location.href = `forecast.html?city=${city}`;
+          };
+          cList.appendChild(item);
         });
+      }
 
-        for(let reg in database) {
-            let item = document.createElement('div');
-            item.className = 'menu-item';
-            item.textContent = reg;
-            item.onclick = (e) => {
-                e.stopPropagation();
-                Array.from(rList.children).forEach(c => c.classList.remove('active'));
-                item.classList.add('active');
-                btnText.textContent = reg;
-                showCities(reg);
-            };
-            rList.appendChild(item);
-        }
+      window.onclick = () => {
+        menu.style.display = "none";
+      };
 
-        function showCities(reg) {
-            cList.innerHTML = '';
-            database[reg].forEach(city => {
-                let item = document.createElement('div');
-                item.className = 'menu-item';
-                item.textContent = city;
-                item.onclick = () => {
-                    window.location.href = `forecast.html?city=${city}`;
-                };
-                cList.appendChild(item);
-            });
-        }
-
-        window.onclick = () => { menu.style.display = 'none'; };
-
-        const searchInp = document.getElementById('searchInput');
-        searchInp.addEventListener('change', () => {
-            if(searchInp.value.length > 2) window.location.href = `forecast.html?city=${searchInp.value}`;
-        });
+      const searchInp = document.getElementById("searchInput");
+      searchInp.addEventListener("change", () => {
+        if (searchInp.value.length > 2)
+          window.location.href = `forecast.html?city=${searchInp.value}`;
+      });
     </script>
-
-</body>
+  </body>
 </html>
