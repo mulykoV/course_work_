@@ -1,0 +1,234 @@
+/* --- ЗАГАЛЬНІ НАЛАШТУВАННЯ --- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Times New Roman', serif;
+}
+
+body {
+    /* Градієнт для Головної */
+    background: linear-gradient(180deg, #6b7be8 0%, #5a6bbf 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow-x: hidden;
+}
+
+a { text-decoration: none; color: inherit; }
+
+/* =========================================
+   СТИЛІ ГОЛОВНОЇ СТОРІНКИ (index.html)
+   ========================================= */
+
+/* Навігація справа зверху (Фіксована) */
+.home-nav {
+    position: absolute;
+    top: 25px;       /* Відступ зверху */
+    right: 50px;     /* Відступ справа */
+    display: flex;
+    gap: 30px;       /* Відстань між словами */
+    z-index: 1000;
+}
+
+.nav-link {
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-decoration: underline;
+    color: #000;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+.nav-link:hover { color: #fff; }
+
+/* Контейнер головної сторінки */
+.home-container {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; /* Центрує картинку і кнопки по вертикалі */
+    width: 100%;
+    padding-bottom: 20px;
+}
+
+/* БАНЕР (На весь екран HD) */
+.banner-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 40px; /* Відступ від картинки до кнопок */
+}
+
+.banner-img {
+    width: 90%;        /* Ширина картинки */
+    max-width: 1400px; /* Обмеження ширини */
+    height: auto;
+    object-fit: contain;
+    /* Тінь прибрана або залишена за бажанням */
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3)); 
+}
+
+/* БЛОК КНОПОК ЗНИЗУ */
+.controls-area {
+    width: 80%;
+    max-width: 1000px;
+    display: flex;
+    justify-content: space-between;
+    gap: 40px;
+    position: relative;
+    z-index: 20;
+    margin-bottom: 40px;
+}
+
+/* Сірі поля вводу */
+.input-box {
+    background-color: #dcdcdc;
+    border: 1px solid #999;
+    border-radius: 15px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    font-size: 1.3rem;
+    box-shadow: 4px 4px 10px rgba(0,0,0,0.2);
+    cursor: pointer;
+    position: relative;
+}
+
+.dropdown-wrapper { width: 45%; position: relative; }
+.dropdown-btn { width: 100%; justify-content: space-between; font-weight: bold; }
+
+.search-wrapper { width: 50%; }
+.search-field { width: 100%; height: 100%; background: transparent; border: none; outline: none; font-size: 1.3rem; }
+.search-icon { font-size: 1.5rem; color: #333; }
+
+/* Випадаюче меню */
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 110%;
+    left: 0;
+    width: 200%;
+    height: 350px;
+    background-color: white;
+    border: 2px solid #555;
+    border-radius: 10px;
+    z-index: 2000;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+.col-regions { width: 40%; background: #eee; height: 100%; overflow-y: auto; padding: 10px; border-right: 1px solid #ccc; }
+.col-cities { width: 60%; background: #fff; height: 100%; overflow-y: auto; padding: 10px; }
+.menu-item { padding: 10px; font-size: 1.1rem; cursor: pointer; border-bottom: 1px solid #ddd; }
+.menu-item:hover { background-color: #ccc; }
+.menu-item.active { background-color: #333; color: #fff; }
+
+/* =========================================
+   СТИЛІ СТОРІНКИ ПРОГНОЗУ (forecast.html)
+   ========================================= */
+
+body.forecast-page {
+    background: #5C6BC0; 
+}
+
+.forecast-header-strip {
+    background-color: #4A569D;
+    width: 100%;
+    padding: 15px 0;
+    text-align: center;
+    border-bottom: 2px solid #333;
+}
+
+.header-text {
+    font-size: 3.5rem;
+    font-weight: bold;
+    color: #000;
+    text-shadow: 1px 1px 0 rgba(255,255,255,0.2);
+}
+
+.sub-nav-bar {
+    padding: 20px 60px;
+    display: flex;
+    gap: 30px;
+}
+.sub-link {
+    font-size: 1.4rem;
+    font-weight: bold;
+    text-decoration: underline;
+    color: #000;
+}
+.sub-link:hover { color: #fff; }
+
+.city-display-wrapper { margin: 0 60px 30px 60px; }
+.city-pill {
+    background-color: #D9D9D9;
+    border: 1px solid #777;
+    border-radius: 25px;
+    padding: 10px 30px;
+    display: inline-flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    box-shadow: 4px 4px 5px rgba(0,0,0,0.2);
+}
+
+.cards-grid {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    padding: 0 40px 40px 40px;
+    flex-wrap: wrap;
+}
+
+.weather-card {
+    background-color: #7986CB;
+    border: 3px solid #283593;
+    width: 220px;
+    height: 300px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    box-shadow: 5px 5px 0px rgba(0,0,0,0.2);
+}
+
+.card-icon-box {
+    background-color: white;
+    width: 90%;
+    height: 140px;
+    margin-top: 15px;
+    border: 2px solid #283593;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.card-icon-box img { max-width: 80%; max-height: 80%; }
+
+.card-details {
+    color: white;
+    width: 100%;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+}
+.day-title { font-size: 1.3rem; font-weight: bold; }
+.temps { display: flex; justify-content: space-around; width: 100%; font-size: 1.1rem; }
+.temp-num { font-weight: bold; font-size: 1.3rem; display: block; }
+
+/* ФУТЕР (Спільний) */
+.footer {
+    margin-top: auto; 
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    color: #2e006a;
+    font-size: 1.2rem;
+    text-decoration: underline;
+    font-weight: bold;
+    padding: 20px 40px;
+}
+.globe-icon { font-size: 1.5rem; }
