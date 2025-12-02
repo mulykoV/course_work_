@@ -2,6 +2,7 @@
 <html lang="uk">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>HippoWeather - Прогноз</title>
     <link rel="stylesheet" href="style.css" />
   </head>
@@ -22,7 +23,58 @@
       </div>
     </div>
 
-    <div class="cards-grid" id="forecastGrid"></div>
+    <div class="cards-grid">
+      <div class="weather-card">
+        <div class="card-icon-box"><img src="rain.png" alt="Дощ" /></div>
+        <div class="card-details">
+          <div class="day-title">Понеділок</div>
+          <div class="temps">
+            <div>min<span class="temp-num">0°</span></div>
+            <div>max<span class="temp-num">+4°</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="weather-card">
+        <div class="card-icon-box"><img src="storm.png" alt="Гроза" /></div>
+        <div class="card-details">
+          <div class="day-title">Вівторок</div>
+          <div class="temps">
+            <div>min<span class="temp-num">+1°</span></div>
+            <div>max<span class="temp-num">+8°</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="weather-card">
+        <div class="card-icon-box"><img src="sun.png" alt="Сонце" /></div>
+        <div class="card-details">
+          <div class="day-title">Середа</div>
+          <div class="temps">
+            <div>min<span class="temp-num">0°</span></div>
+            <div>max<span class="temp-num">+7°</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="weather-card">
+        <div class="card-icon-box"><img src="cloud.png" alt="Хмарно" /></div>
+        <div class="card-details">
+          <div class="day-title">Четвер</div>
+          <div class="temps">
+            <div>min<span class="temp-num">-2°</span></div>
+            <div>max<span class="temp-num">+4°</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="weather-card">
+        <div class="card-icon-box"><img src="wind.png" alt="Вітер" /></div>
+        <div class="card-details">
+          <div class="day-title">П'ятниця</div>
+          <div class="temps">
+            <div>min<span class="temp-num">-1°</span></div>
+            <div>max<span class="temp-num">+3°</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <a href="#" class="footer">
       <span class="globe-icon">&#127757;</span>
@@ -30,91 +82,10 @@
     </a>
 
     <script>
-      // ===== Твої функції для дат і API =====
-      function get_today_date() {
-        const now = new Date();
-        return now.toISOString().split("T")[0];
-      }
-
-      function get_date_in_days(days) {
-        const now = new Date();
-        const futureDate = new Date(now);
-        futureDate.setDate(now.getDate() + days);
-        return futureDate.toISOString().split("T")[0];
-      }
-
-      async function get_weather(
-        location,
-        date1,
-        date2,
-        YOUR_API_KEY = "4PSYAUWNUWQM8SBY68SUSE2N7"
-      ) {
-        const response = await fetch(
-          `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${location}/${date1}/${date2}?key=${YOUR_API_KEY}&unitGroup=metric`
-        );
-        if (response.ok) {
-          const data = await response.json();
-          return data;
-        } else {
-          console.log("Error fetching weather data:", response.statusText);
-        }
-      }
-
-      async function get_weather_next_week(
-        location,
-        YOUR_API_KEY = "4PSYAUWNUWQM8SBY68SUSE2N7"
-      ) {
-        const today = get_today_date();
-        const date = get_date_in_days(7);
-        return await get_weather(location, today, date, YOUR_API_KEY);
-      }
-
-      // ===== Логіка сторінки =====
       const params = new URLSearchParams(window.location.search);
       const city = params.get("city");
-
-      if (city) {
+      if (city)
         document.getElementById("currentCityName").textContent = "м. " + city;
-        showForecast(city);
-      }
-
-      async function showForecast(city) {
-        const data = await get_weather_next_week(city);
-        const grid = document.getElementById("forecastGrid");
-        grid.innerHTML = "";
-
-        // беремо перші 7 днів
-        data.days.slice(0, 7).forEach((day) => {
-          const card = document.createElement("div");
-          card.className = "weather-card";
-
-          // вибір іконки за умовами
-          let icon = "cloud.png";
-          if (day.conditions.includes("Rain")) icon = "rain.png";
-          else if (day.conditions.includes("Snow")) icon = "snow.png";
-          else if (day.conditions.includes("Clear")) icon = "sun.png";
-          else if (day.conditions.includes("Thunderstorm")) icon = "storm.png";
-          else if (day.conditions.includes("Wind")) icon = "wind.png";
-
-          card.innerHTML = `
-          <div class="card-icon-box"><img src="${icon}" alt="${
-            day.conditions
-          }"></div>
-          <div class="card-details">
-            <div class="day-title">${new Date(day.datetime).toLocaleDateString(
-              "uk-UA",
-              { weekday: "long" }
-            )}</div>
-            <div class="temps">
-              <div>min <span class="temp-num">${day.tempmin}°</span></div>
-              <div>max <span class="temp-num">${day.tempmax}°</span></div>
-            </div>
-            <div class="conditions">${day.conditions}</div>
-          </div>
-        `;
-          grid.appendChild(card);
-        });
-      }
     </script>
   </body>
 </html>
