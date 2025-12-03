@@ -1,91 +1,102 @@
 <!DOCTYPE html>
 <html lang="uk">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HippoWeather - Прогноз</title>
+    <title>HippoWeather</title>
     <link rel="stylesheet" href="style.css" />
-  </head>
-  <body class="forecast-page">
-    <header class="forecast-header-strip">
-      <div class="header-text">HippoWeather</div>
-    </header>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body :class="weatherClass">
+    <div id="app" v-cloak>
+        
+        <div class="weather-background">
+            <div class="sun" v-if="isSunny"></div>
+            
+            <div class="rain" v-if="isRainy">
+                <i v-for="n in 50" :key="n"></i> 
+            </div>
+            
+            <div class="fog" v-if="isFoggy">
+                <div class="fog-layer"></div>
+                <div class="fog-layer two"></div>
+            </div>
+            
+            <div class="clouds" v-if="isCloudy">
+                <div class="cloud"></div>
+                <div class="cloud two"></div>
+            </div>
+        </div>
 
-    <nav class="sub-nav-bar">
-      <a href="index.html" class="nav-link">Home</a>
-      <a href="forecast.html" class="nav-link">Forecast</a>
-    </nav>
+        <nav class="glass-nav" v-if="currentView === 'home'">
+            <a href="#" :class="{ active: currentView === 'home' }" @click.prevent="currentView = 'home'">Home</a>
+            <a href="#" @click.prevent="searchCity">Forecast</a>
+        </nav>
 
-    <div class="city-display-wrapper">
-      <div class="city-pill">
-        <span>&#127757;</span>
-        <span id="currentCityName">м. Київ</span>
-      </div>
+        <div class="content-container" v-if="currentView === 'home'">
+            <div class="glass-panel main-panel">
+                <h1 class="header-text">HippoWeather</h1>
+                
+                <div class="banner-wrapper">
+                    <img src="banner.png" alt="Hippo God" class="banner-img floating-animation" />
+                </div>
+
+                <div class="controls-area">
+                    <div class="input-group">
+                        <select v-model="selectedCity" @change="searchCity">
+                            <option value="">Оберіть місто...</option>
+                            <option value="Kyiv">Київ</option>
+                            <option value="Lviv">Львів</option>
+                            <option value="Odessa">Одеса</option>
+                            <option value="Kharkiv">Харків</option>
+                            <option value="Dnipro">Дніпро</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <input type="text" placeholder="Введіть назву міста..." v-model="searchQuery" @keyup.enter="searchCity" />
+                        <button @click="searchCity">🔍</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="glass-footer">
+                <p>🌍 Погода, яка надихає бегемотів</p>
+            </div>
+        </div>
+
+        <div class="content-container" v-if="currentView === 'forecast'">
+            <div class="glass-header">
+                <button class="back-btn" @click="currentView = 'home'">← Назад</button>
+                <h2>{{ displayCity }}</h2>
+                <span class="date-badge">Прогноз на 5 днів</span>
+            </div>
+
+            <div class="forecast-grid">
+                <p v-if="loading" class="loading-text">Аналізуємо хмари...</p>
+
+                <div v-else class="weather-card glass-card" 
+                     v-for="(day, index) in weatherList" 
+                     :key="day.dt" 
+                     :style="{ 'animation-delay': index * 0.1 + 's' }">
+                    
+                    <div class="day-name">{{ formatDay(day.dt) }}</div>
+                    
+                    <div class="icon-container">
+                        <img :src="getImagePath(day.weather[0].main)" alt="icon" class="weather-icon" />
+                    </div>
+                    
+                    <div class="temp-range">
+                        <div class="temp-high">{{ Math.round(day.main.temp_max) }}°</div>
+                        <div class="temp-bar"></div> 
+                        <div class="temp-low">{{ Math.round(day.main.temp_min) }}°</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
-
-    <div class="cards-grid">
-      <div class="weather-card">
-        <div class="card-icon-box"><img src="rain.png" alt="Дощ" /></div>
-        <div class="card-details">
-          <div class="day-title">Понеділок</div>
-          <div class="temps">
-            <div>min<span class="temp-num">0°</span></div>
-            <div>max<span class="temp-num">+4°</span></div>
-          </div>
-        </div>
-      </div>
-      <div class="weather-card">
-        <div class="card-icon-box"><img src="storm.png" alt="Гроза" /></div>
-        <div class="card-details">
-          <div class="day-title">Вівторок</div>
-          <div class="temps">
-            <div>min<span class="temp-num">+1°</span></div>
-            <div>max<span class="temp-num">+8°</span></div>
-          </div>
-        </div>
-      </div>
-      <div class="weather-card">
-        <div class="card-icon-box"><img src="sun.png" alt="Сонце" /></div>
-        <div class="card-details">
-          <div class="day-title">Середа</div>
-          <div class="temps">
-            <div>min<span class="temp-num">0°</span></div>
-            <div>max<span class="temp-num">+7°</span></div>
-          </div>
-        </div>
-      </div>
-      <div class="weather-card">
-        <div class="card-icon-box"><img src="cloud.png" alt="Хмарно" /></div>
-        <div class="card-details">
-          <div class="day-title">Четвер</div>
-          <div class="temps">
-            <div>min<span class="temp-num">-2°</span></div>
-            <div>max<span class="temp-num">+4°</span></div>
-          </div>
-        </div>
-      </div>
-      <div class="weather-card">
-        <div class="card-icon-box"><img src="wind.png" alt="Вітер" /></div>
-        <div class="card-details">
-          <div class="day-title">П'ятниця</div>
-          <div class="temps">
-            <div>min<span class="temp-num">-1°</span></div>
-            <div>max<span class="temp-num">+3°</span></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <a href="#" class="footer">
-      <span class="globe-icon">&#127757;</span>
-      Цікаві факти про те як погода впливає на бегемотів
-    </a>
-
-    <script>
-      const params = new URLSearchParams(window.location.search);
-      const city = params.get("city");
-      if (city)
-        document.getElementById("currentCityName").textContent = "м. " + city;
-    </script>
-  </body>
+    <script src="app.js"></script>
+</body>
 </html>

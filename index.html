@@ -1,133 +1,929 @@
 <!DOCTYPE html>
 <html lang="uk">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HippoWeather Vue</title>
-    <link rel="stylesheet" href="style.css" />
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-  </head>
-  <body :class="{ 'forecast-page': currentView === 'forecast' }">
-    <div id="app">
-      <nav class="home-nav" v-if="currentView === 'home'">
-        <a href="#" class="nav-link" @click.prevent="currentView = 'home'"
-          >Home</a
-        >
-        <a href="#" class="nav-link" @click.prevent="searchCity">Forecast</a>
-      </nav>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>HippoWeather Ultimate — Live Effects</title>
+  <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700;800&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://unpkg.com/feather-icons"></script>
+  
+  <style>
+    :root {
+      --text: #ffffff;
+      --text-mute: rgba(255, 255, 255, 0.6);
+      --glass-bg: rgba(20, 20, 20, 0.65);
+      --glass-border: rgba(255, 255, 255, 0.12);
+      --glass-highlight: rgba(255, 255, 255, 0.2);
+      --accent: #2F80ED;
+      --radius-lg: 32px;
+      --radius-md: 20px;
+      --radius-sm: 12px;
+      --shadow-soft: 0 10px 40px rgba(0,0,0,0.25);
+      --font-main: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
 
-      <div class="home-container" v-if="currentView === 'home'">
-        <h1 class="header-text" style="margin-top: 50px">HIPPOWEATHER</h1>
+    * { box-sizing: border-box; user-select: none; }
+    
+    body {
+      margin: 0;
+      font-family: var(--font-main);
+      background: #0f0f11;
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden; /* Prevent scroll on body, handle inside app */
+    }
 
-        <div class="banner-wrapper">
-          <img src="banner.png" alt="Hippo God" class="banner-img" />
+    /* --- DYNAMIC BACKGROUND & PARTICLES --- */
+    .viewport {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .bg-gradient {
+      position: absolute;
+      inset: -50px;
+      background-size: 200% 200%;
+      transition: background 1.5s ease;
+      z-index: 0;
+      filter: blur(40px);
+    }
+
+    /* Weather Layers */
+    .weather-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    /* Rain Animation */
+    .rain-drop {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.4);
+      width: 2px;
+      height: 15px;
+      top: -20px;
+      animation: fall linear infinite;
+    }
+    @keyframes fall {
+      to { transform: translateY(110vh); }
+    }
+
+    /* Snow Animation */
+    .snowflake {
+      position: absolute;
+      background: white;
+      border-radius: 50%;
+      top: -10px;
+      animation: snow-fall linear infinite;
+      filter: blur(1px);
+    }
+    @keyframes snow-fall {
+      0% { transform: translateY(0) translateX(0); opacity: 0.8; }
+      100% { transform: translateY(110vh) translateX(20px); opacity: 0.3; }
+    }
+
+    /* Thunder Animation */
+    .flash {
+      position: absolute;
+      inset: 0;
+      background: white;
+      opacity: 0;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .flash.active {
+      animation: thunder-flash 4s infinite;
+    }
+    @keyframes thunder-flash {
+      0%, 90% { opacity: 0; }
+      92% { opacity: 0.6; }
+      94% { opacity: 0; }
+      96% { opacity: 0.3; }
+      100% { opacity: 0; }
+    }
+
+    /* --- LAYOUT --- */
+    .app-shell {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      height: 100vh;
+      max-width: 1600px;
+      margin: 0 auto;
+      gap: 0;
+    }
+
+    /* --- SIDEBAR --- */
+    .sidebar {
+      background: rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border-right: 1px solid var(--glass-border);
+      padding: 30px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      transition: transform 0.3s ease;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, #fff, #aab);
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      color: #000;
+      box-shadow: 0 0 20px rgba(255,255,255,0.2);
+    }
+
+    /* Search */
+    .search-box {
+      position: relative;
+    }
+    .search-input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--glass-border);
+      padding: 14px 16px;
+      padding-right: 44px;
+      border-radius: 16px;
+      color: white;
+      font-size: 1rem;
+      outline: none;
+      font-family: var(--font-main);
+      transition: 0.3s;
+    }
+    .search-input:focus {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.5);
+      box-shadow: 0 0 0 4px rgba(255,255,255,0.05);
+    }
+    .search-icon-btn {
+      position: absolute;
+      right: 8px;
+      top: 8px;
+      width: 34px;
+      height: 34px;
+      background: var(--accent);
+      border: none;
+      border-radius: 10px;
+      color: white;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: 0.2s;
+    }
+    .search-icon-btn:hover { transform: scale(1.05); }
+
+    .city-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .pill {
+      font-size: 0.85rem;
+      padding: 6px 14px;
+      border-radius: 100px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .pill:hover { background: rgba(255, 255, 255, 0.15); border-color: rgba(255,255,255,0.2); }
+
+    /* Control Group */
+    .control-group {
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 20px;
+      padding: 20px;
+      border: 1px solid var(--glass-border);
+    }
+    .group-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-mute);
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .mode-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    .mode-btn {
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid var(--glass-border);
+      background: transparent;
+      color: var(--text-mute);
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: 0.2s;
+      text-align: center;
+    }
+    .mode-btn:hover { background: rgba(255,255,255,0.05); color: #fff; }
+    .mode-btn.active {
+      background: #fff;
+      color: #000;
+      border-color: #fff;
+      font-weight: 600;
+      box-shadow: 0 4px 15px rgba(255,255,255,0.3);
+    }
+
+    /* --- MAIN CONTENT --- */
+    .main-content {
+      padding: 40px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    /* Hero Section */
+    .hero {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 0;
+    }
+    .city-title { font-size: 3rem; font-weight: 700; margin: 0; line-height: 1.1; }
+    .date-sub { font-size: 1.1rem; color: var(--text-mute); margin-top: 4px; }
+    
+    .big-temp-wrap { margin-top: 20px; }
+    .big-temp { font-size: 7rem; font-weight: 200; line-height: 1; letter-spacing: -3px; }
+    .condition-text { font-size: 1.4rem; font-weight: 500; text-transform: capitalize; margin-top: 8px; }
+    
+    .weather-illustration {
+      width: 280px;
+      height: 280px;
+      filter: drop-shadow(0 20px 50px rgba(0,0,0,0.4));
+      animation: floatIcon 6s ease-in-out infinite;
+    }
+    @keyframes floatIcon {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+
+    /* Cards */
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 24px;
+      padding: 24px;
+    }
+
+    /* Hourly Strip */
+    .hourly-strip {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      padding-bottom: 10px;
+      scrollbar-width: none;
+    }
+    .hourly-strip::-webkit-scrollbar { display: none; }
+    
+    .hour-item {
+      min-width: 70px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 12px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid transparent;
+      transition: 0.2s;
+    }
+    .hour-item:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.1); transform: translateY(-5px); }
+    .hour-item img { width: 36px; height: 36px; }
+
+    /* Info Grid */
+    .grid-wrap {
+      display: grid;
+      grid-template-columns: 350px 1fr;
+      gap: 24px;
+    }
+    
+    .forecast-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .day-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .day-row:last-child { border-bottom: none; }
+    .temp-range-bar {
+      flex: 1;
+      height: 5px;
+      background: rgba(255,255,255,0.1);
+      margin: 0 15px;
+      border-radius: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+    .temp-fill {
+      position: absolute;
+      height: 100%;
+      border-radius: 10px;
+      background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+    }
+
+    .details-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+    .detail-box {
+      background: rgba(255,255,255,0.03);
+      border-radius: 20px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 120px;
+      border: 1px solid rgba(255,255,255,0.05);
+      transition: 0.2s;
+    }
+    .detail-box:hover { background: rgba(255,255,255,0.06); }
+    .d-head { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-mute); }
+    .d-val { font-size: 1.8rem; font-weight: 600; margin-top: 10px; }
+    .d-meta { font-size: 0.8rem; opacity: 0.6; margin-top: auto; padding-top: 8px;}
+
+    /* Animations */
+    .fade-enter-active, .fade-leave-active { transition: opacity 0.5s ease; }
+    .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .app-shell { grid-template-columns: 1fr; }
+      .sidebar { display: none; /* Add toggle menu for mobile in real app */ }
+      .sidebar.mobile-open { display: flex; position: fixed; inset: 0; z-index: 100; }
+      .grid-wrap { grid-template-columns: 1fr; }
+      .main-content { padding: 20px; padding-top: 80px; }
+      
+      /* Mobile Header */
+      .mobile-nav {
+        display: flex; justify-content: space-between; align-items: center;
+        position: fixed; top: 0; left: 0; right: 0; padding: 15px 20px;
+        background: rgba(0,0,0,0.5); backdrop-filter: blur(20px); z-index: 50;
+      }
+    }
+    @media (min-width: 1025px) { .mobile-nav { display: none; } }
+
+    /* --- ARCADE ZONE STYLES --- */
+.arcade-section {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--glass-border);
+}
+
+.arcade-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--text-mute);
+}
+
+.game-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  overflow: hidden;
+}
+
+/* Hover Effects */
+.game-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+/* Game Icon Box */
+.game-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  position: relative;
+  z-index: 2;
+}
+
+/* Specific Styles for Defender */
+.card-defender .game-icon-box {
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+}
+.card-defender:hover {
+  box-shadow: 0 10px 40px rgba(79, 172, 254, 0.2);
+  border-color: rgba(79, 172, 254, 0.4);
+}
+
+/* Specific Styles for Survivor */
+.card-survivor .game-icon-box {
+  background: linear-gradient(135deg, #ffd700, #ffaa00); /* Gold/Yellow */
+}
+.card-survivor:hover {
+  box-shadow: 0 10px 40px rgba(255, 215, 0, 0.2);
+  border-color: rgba(255, 215, 0, 0.4);
+}
+
+/* Text Styling */
+.game-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.game-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #fff;
+}
+.game-desc {
+  font-size: 0.75rem;
+  color: var(--text-mute);
+}
+
+/* Play Arrow */
+.play-icon {
+  margin-left: auto;
+  opacity: 0.5;
+  transition: 0.2s;
+}
+.game-card:hover .play-icon {
+  opacity: 1;
+  transform: translateX(4px);
+  color: white;
+}
+
+/* Background Glow Animation */
+.game-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+  transition: 0.5s;
+}
+.game-card:hover::before {
+  left: 100%;
+}
+/* Оновлюємо клас сайдбару */
+.sidebar {
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border-right: 1px solid var(--glass-border);
+  padding: 30px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  transition: transform 0.3s ease;
+  
+  /* --- ВАЖЛИВІ ЗМІНИ ДЛЯ ПРОКРУТКИ --- */
+  height: 100vh;       /* Фіксуємо висоту на весь екран */
+  overflow-y: auto;    /* Вмикаємо вертикальну прокрутку */
+  overflow-x: hidden;  /* Ховаємо горизонтальну прокрутку */
+}
+
+/* --- СТИЛІЗАЦІЯ СКРОЛБАРУ (Робимо його гарним) --- */
+
+/* Ширина скролбару */
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+/* Фон скролбару (прозорий) */
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Сам повзунок */
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1); /* Ледь помітний */
+  border-radius: 10px;
+  transition: background 0.3s;
+}
+
+/* Повзунок при наведенні мишкою стає яскравішим */
+.sidebar:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+  </style>
+</head>
+<body :class="currentWeatherClass">
+
+  <div id="app" class="viewport">
+    
+    <div class="bg-gradient" :style="backgroundStyle"></div>
+    
+    <div class="weather-layer" v-if="weatherState.includes('Rain') || weatherState.includes('Drizzle')">
+      <div v-for="n in 100" :key="'r'+n" class="rain-drop" :style="getRainStyle()"></div>
+    </div>
+    <div class="weather-layer" v-if="weatherState.includes('Snow')">
+      <div v-for="n in 50" :key="'s'+n" class="snowflake" :style="getSnowStyle()"></div>
+    </div>
+    <div class="flash" :class="{active: weatherState.includes('Thunder')}"></div>
+
+    <div class="mobile-nav">
+      <div style="font-weight:700">HippoWeather</div>
+      <button @click="mobileMenuOpen = !mobileMenuOpen" style="background:none; border:none; color:white">
+        <i data-feather="menu"></i>
+      </button>
+    </div>
+
+    <div class="app-shell">
+      
+      <div class="sidebar" :class="{'mobile-open': mobileMenuOpen}">
+        <div class="brand">
+          <div class="brand-icon"><i data-feather="cloud" style="stroke:black"></i></div>
+          <div>
+             <h2 style="margin:0; font-size:1.2rem">HippoWeather</h2>
+             <span style="font-size:0.75rem; opacity:0.5; letter-spacing:1px">ULTIMATE UI</span>
+          </div>
+          <button v-if="mobileMenuOpen" @click="mobileMenuOpen=false" style="margin-left:auto; background:none; border:none; color:white"><i data-feather="x"></i></button>
         </div>
 
-        <div class="controls-area">
-          <div class="input-box dropdown-wrapper">
-            <select
-              v-model="selectedCity"
-              @change="searchCity"
-              style="
-                width: 100%;
-                background: transparent;
-                border: none;
-                font-size: 1.1rem;
-                outline: none;
-              "
-            >
-              <option value="">Оберіть місто...</option>
-              <option value="Kyiv">Київ</option>
-              <option value="Lviv">Львів</option>
-              <option value="Odessa">Одеса</option>
-              <option value="Kharkiv">Харків</option>
-              <option value="Dnipro">Дніпро</option>
-            </select>
-          </div>
-
-          <div class="input-box search-wrapper">
-            <input
-              type="text"
-              class="search-field"
-              placeholder="Пошук (напр. Харків)"
-              v-model="searchQuery"
-              @keyup.enter="searchCity"
-            />
-            <span
-              class="search-icon"
-              @click="searchCity"
-              style="cursor: pointer"
-              >🔍</span
-            >
-          </div>
+        <div class="search-box">
+          <input class="search-input" placeholder="Пошук міста..." v-model="searchQuery" @keyup.enter="handleSearch">
+          <button class="search-icon-btn" @click="handleSearch"><i data-feather="search" style="width:16px"></i></button>
         </div>
 
-        <div class="footer">
-          <span class="globe-icon">🌍</span>
-          <span>Цікаві факти про те як погода впливає на бегемотів</span>
+        <div class="city-pills">
+          <span class="pill" v-for="city in savedCities" @click="loadCity(city)">{{ translate(city) }}</span>
+        </div>
+
+        <div class="control-group">
+          <span class="group-label">Режим вигляду</span>
+          <div class="mode-grid">
+            <button class="mode-btn" :class="{active: demoMode === m}" v-for="m in demoModes" @click="activateDemo(m)">
+              {{ m }}
+            </button>
+          </div>
+          <div style="margin-top:12px; font-size:0.75rem; color:var(--text-mute); line-height:1.4">
+            <i data-feather="info" style="width:12px; vertical-align:middle"></i> Натискання цих кнопок примусово змінить погоду на екрані.
+          </div>
+        </div>
+        <div class="arcade-section">
+  <div class="arcade-header">
+    <i data-feather="box" style="width:14px"></i>
+    <span>Ігрова Зона</span>
+  </div>
+
+  <div class="game-card card-defender" onclick="window.open('game.html', '_blank')">
+    <div class="game-icon-box">🦛</div>
+    <div class="game-info">
+      <span class="game-title">Hippo Defender</span>
+      <span class="game-desc">Лови сонце, тікай від грози</span>
+    </div>
+    <i data-feather="chevron-right" class="play-icon"></i>
+  </div>
+
+  <div class="game-card card-survivor" onclick="window.open('game-ultimate.html', '_blank')"> <div class="game-icon-box">🛡️</div>
+    <div class="game-info">
+      <span class="game-title">Kyiv Survivor</span>
+      <span class="game-desc">Захисти місто від навали</span>
+    </div>
+    <i data-feather="chevron-right" class="play-icon"></i>
+  </div>
+</div>
+
+        <div class="control-group">
+           <span class="group-label">Час доби</span>
+           <input type="range" v-model="timeVal" min="0" max="100" style="width:100%; accent-color: white">
         </div>
       </div>
 
-      <div class="forecast-container" v-if="currentView === 'forecast'">
-        <div class="forecast-header-strip">
-          <h1 class="header-text">HippoWeather</h1>
-        </div>
-
-        <div class="sub-nav-bar">
-          <a href="#" class="sub-link" @click.prevent="currentView = 'home'"
-            >Home</a
-          >
-          <span class="sub-link active">Forecast</span>
-        </div>
-
-        <div class="city-display-wrapper">
-          <div class="city-pill"><span>🌍</span> м. {{ displayCity }}</div>
-        </div>
-
-        <div class="cards-grid">
-          <p v-if="loading" style="color: white; font-size: 2rem">
-            Завантаження...
-          </p>
-
-          <div
-            v-else
-            class="weather-card"
-            v-for="day in weatherList"
-            :key="day.dt"
-          >
-            <div class="card-icon-box">
-              <img :src="getImagePath(day.weather[0].main)" alt="icon" />
+      <div class="main-content">
+        
+        <div class="hero">
+          <div>
+            <h1 class="city-title">{{ displayData.city }}</h1>
+            <div class="date-sub">{{ currentDate }}</div>
+            
+            <div class="big-temp-wrap">
+              <div class="big-temp">{{ Math.round(displayData.temp) }}°</div>
+              <div class="condition-text">{{ displayData.desc }}</div>
+              <div style="opacity:0.6; margin-top:6px">Відчувається як {{ Math.round(displayData.feels_like) }}°</div>
             </div>
+          </div>
+          
+          <img :src="currentIconUrl" class="weather-illustration" alt="Weather">
+        </div>
 
-            <div class="card-details">
-              <div class="day-title">{{ formatDay(day.dt) }}</div>
-              <div class="temps">
-                <div class="temp-col">
-                  <span>max</span>
-                  <span class="temp-num"
-                    >{{ Math.round(day.main.temp_max) }}°</span
-                  >
+        <div v-if="hourly.length" style="animation: fade-enter-from 0.5s">
+          <div class="group-label" style="margin-bottom:12px; margin-left:4px"><i data-feather="clock" style="width:14px"></i> Погодинно</div>
+          <div class="hourly-strip">
+            <div class="hour-item" v-for="h in hourly" :key="h.dt">
+              <span style="font-size:0.85rem; opacity:0.7">{{ formatTime(h.dt) }}</span>
+              <img :src="getIconUrl(h.weather[0].main)" alt="w">
+              <span style="font-weight:600">{{ Math.round(h.main.temp) }}°</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-wrap">
+          
+          <div class="glass-panel">
+            <div class="group-label" style="margin-bottom:16px"><i data-feather="calendar" style="width:14px"></i> Прогноз на 5 днів</div>
+            <div class="forecast-list">
+              <div class="day-row" v-for="d in daily" :key="d.dt">
+                <div style="width:40px; font-weight:600">{{ getDayName(d.dt) }}</div>
+                <img :src="getIconUrl(d.weather[0].main)" style="width:28px; height:28px">
+                <div class="temp-range-bar">
+                   <div class="temp-fill" :style="getBarWidth(d)"></div>
                 </div>
-                <div class="temp-col">
-                  <span>min</span>
-                  <span class="temp-num"
-                    >{{ Math.round(day.main.temp_min) }}°</span
-                  >
+                <div style="width:60px; text-align:right; font-feature-settings:'tnum'">
+                  <span style="opacity:0.6">{{ Math.round(d.min) }}°</span> <span style="font-weight:600">{{ Math.round(d.max) }}°</span>
                 </div>
               </div>
             </div>
           </div>
+
+          <div class="details-grid">
+            <div class="detail-box">
+              <div class="d-head"><i data-feather="wind"></i> Вітер</div>
+              <div class="d-val">{{ displayData.wind }} <span style="font-size:1rem">м/с</span></div>
+              <div class="d-meta">Напрямок: Пн-Зх</div>
+            </div>
+            <div class="detail-box">
+              <div class="d-head"><i data-feather="droplet"></i> Вологість</div>
+              <div class="d-val">{{ displayData.humidity }}%</div>
+              <div class="d-meta">Точка роси: {{ Math.round(displayData.temp - 2) }}°</div>
+            </div>
+            <div class="detail-box">
+              <div class="d-head"><i data-feather="eye"></i> Видимість</div>
+              <div class="d-val">{{ displayData.vis }} <span style="font-size:1rem">км</span></div>
+              <div class="d-meta">{{ getVisDesc(displayData.vis) }}</div>
+            </div>
+            <div class="detail-box">
+              <div class="d-head"><i data-feather="sun"></i> UV Індекс</div>
+              <div class="d-val">2 <span style="font-size:1rem; font-weight:400">Низький</span></div>
+              <div class="d-meta">Можна без захисту</div>
+            </div>
+          </div>
+
         </div>
 
-        <div class="footer" style="color: white">
-          <span class="globe-icon">🌍</span>
-          <span style="color: white"
-            >Цікаві факти про те як погода впливає на бегемотів</span
-          >
-        </div>
       </div>
     </div>
 
-    <script src="app.js"></script>
-  </body>
+  </div>
+
+  <script>
+    const { createApp, reactive, toRefs, computed, onMounted, nextTick } = Vue;
+
+    createApp({
+      setup() {
+        const state = reactive({
+          apiKey: 'e09e7c240e2754d1f914c7640ef2ab87',
+          searchQuery: '',
+          savedCities: ['Kyiv', 'Lviv', 'Odessa', 'Dnipro'],
+          
+          // Data
+          weatherData: null,
+          hourly: [],
+          daily: [],
+          
+          // UI State
+          mobileMenuOpen: false,
+          timeVal: 50, // Noon
+          demoMode: null, // If set, overrides API data
+          
+          // Fallback initial data
+          displayData: {
+            city: 'Kyiv', temp: 12, desc: 'Ясно', feels_like: 10, 
+            wind: 3.5, humidity: 45, vis: 10, main: 'Clear'
+          }
+        });
+
+        // 3D Icons Map
+        const icons = {
+          'Clear': 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Sun.png',
+          'Clouds': 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Cloud.png',
+          'Rain': 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Cloud%20with%20Rain.png',
+          'Drizzle': 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Cloud%20with%20Rain.png',
+          'Thunderstorm': 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Cloud%20with%20Lightning%20and%20Rain.png',
+          'Snow': 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Cloud%20with%20Snow.png',
+          'Mist': 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Fog.png',
+          'Fog': 'https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Fog.png'
+        };
+
+        const demoModes = ['Clear', 'Clouds', 'Rain', 'Snow', 'Thunderstorm', 'Fog'];
+
+        // --- COMPUTED ---
+        
+        // Determine what weather state to show (Real API vs Demo Override)
+        const weatherState = computed(() => {
+          if (state.demoMode) return state.demoMode;
+          return state.displayData.main || 'Clear';
+        });
+
+        const currentIconUrl = computed(() => {
+          let main = weatherState.value;
+          // Normalize names
+          if (main.includes('Rain')) main = 'Rain';
+          return icons[main] || icons['Clear'];
+        });
+
+        // Background Logic
+        const backgroundStyle = computed(() => {
+          const mode = weatherState.value;
+          const time = state.timeVal; // 0 (night) -> 50 (day) -> 100 (night)
+          
+          // Base gradients
+          const palettes = {
+            'Clear': ['#4facfe', '#00f2fe'],
+            'Clouds': ['#636FA4', '#E8CBC0'],
+            'Rain': ['#203a43', '#2c5364'],
+            'Snow': ['#83a4d4', '#b6fbff'],
+            'Thunderstorm': ['#0f2027', '#203a43'],
+            'Fog': ['#3e5151', '#decba4']
+          };
+
+          let [c1, c2] = palettes[mode] || palettes['Clear'];
+          
+          // Darken for night time
+          let overlay = 0;
+          if(time < 20 || time > 80) overlay = 0.7;
+          else if(time < 30 || time > 70) overlay = 0.3;
+
+          return {
+            background: `linear-gradient(135deg, ${c1}, ${c2})`,
+            filter: `brightness(${1 - overlay})`
+          };
+        });
+
+        const currentDate = computed(() => {
+          return new Date().toLocaleDateString('uk-UA', { weekday: 'long', day: 'numeric', month: 'long' });
+        });
+
+        // --- METHODS ---
+
+        const getIconUrl = (main) => icons[main] || icons['Clear'];
+        
+        const translate = (city) => {
+           const map = {'Kyiv':'Київ', 'Lviv':'Львів', 'Odessa':'Одеса', 'Dnipro':'Дніпро'};
+           return map[city] || city;
+        };
+
+        const loadCity = (c) => { state.searchQuery = c; handleSearch(); };
+
+        const activateDemo = (m) => {
+          // Force demo mode immediately
+          state.demoMode = m;
+          // Update text to match demo for consistency
+          state.displayData.desc = m === 'Clear' ? 'Демо: Ясно' : `Демо: ${m}`;
+          // Reset after a bit? No, let user keep it until search.
+        };
+
+        // --- PARTICLES ---
+        const getRainStyle = () => {
+          const delay = Math.random() * 2;
+          const left = Math.random() * 100;
+          return { left: left + '%', animationDelay: delay + 's', opacity: Math.random() };
+        };
+        const getSnowStyle = () => {
+          const delay = Math.random() * 5;
+          const left = Math.random() * 100;
+          const dur = 5 + Math.random() * 5;
+          return { left: left + '%', animationDelay: delay + 's', animationDuration: dur + 's', width: (Math.random()*5+2)+'px', height: (Math.random()*5+2)+'px' };
+        };
+
+        // --- API ---
+        const handleSearch = async () => {
+          if(!state.searchQuery) return;
+          
+          // Clear demo mode on new search
+          state.demoMode = null; 
+
+          try {
+             const url = `https://api.openweathermap.org/data/2.5/forecast?q=${state.searchQuery}&units=metric&lang=ua&appid=${state.apiKey}`;
+             const res = await fetch(url);
+             if(!res.ok) throw new Error('City not found');
+             const data = await res.json();
+             
+             // Process Current
+             const now = data.list[0];
+             state.displayData = {
+               city: data.city.name,
+               temp: now.main.temp,
+               desc: now.weather[0].description,
+               feels_like: now.main.feels_like,
+               wind: now.wind.speed,
+               humidity: now.main.humidity,
+               vis: now.visibility / 1000,
+               main: now.weather[0].main
+             };
+
+             // Process Hourly (first 10 items)
+             state.hourly = data.list.slice(0, 10);
+
+             // Process Daily
+             const daysMap = {};
+             data.list.forEach(item => {
+               const day = new Date(item.dt*1000).toLocaleDateString('uk-UA');
+               if(!daysMap[day]) {
+                 daysMap[day] = { dt: item.dt, min: item.main.temp_min, max: item.main.temp_max, weather: item.weather };
+               } else {
+                 daysMap[day].min = Math.min(daysMap[day].min, item.main.temp_min);
+                 daysMap[day].max = Math.max(daysMap[day].max, item.main.temp_max);
+                 if(item.dt_txt.includes('12:00')) daysMap[day].weather = item.weather;
+               }
+             });
+             state.daily = Object.values(daysMap).slice(0, 5);
+             
+             state.mobileMenuOpen = false;
+
+          } catch(e) {
+             alert("Місто не знайдено");
+          }
+        };
+
+        // Formatting Helpers
+        const formatTime = (ts) => new Date(ts*1000).toLocaleTimeString('uk-UA', {hour:'2-digit', minute:'2-digit'});
+        const getDayName = (ts) => new Date(ts*1000).toLocaleDateString('uk-UA', {weekday:'short'});
+        const getVisDesc = (km) => km > 9 ? 'Чудова' : km > 5 ? 'Середня' : 'Погана';
+        const getBarWidth = (d) => {
+           // Simple visualizer relative to fixed range (-10 to 40)
+           const minC = Math.max(-10, d.min);
+           const maxC = Math.min(40, d.max);
+           const range = 50; 
+           const left = ((minC + 10) / range) * 100;
+           const w = ((maxC - minC) / range) * 100;
+           return { left: left+'%', width: w+'%' };
+        };
+
+        onMounted(() => {
+          feather.replace();
+          state.searchQuery = 'Kyiv';
+          handleSearch();
+        });
+
+        // Watch for updates to re-render icons
+        Vue.watch(() => [state.demoMode, state.displayData], () => {
+           nextTick(() => feather.replace());
+        });
+
+        return {
+          ...toRefs(state),
+          weatherState,
+          backgroundStyle,
+          currentIconUrl,
+          currentDate,
+          handleSearch,
+          loadCity,
+          activateDemo,
+          demoModes,
+          getRainStyle,
+          getSnowStyle,
+          getIconUrl,
+          formatTime,
+          getDayName,
+          getBarWidth,
+          getVisDesc,
+          translate
+        };
+      }
+    }).mount('#app');
+  </script>
+</body>
 </html>
